@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MAP Simulator</title>
+<title>Systemic Hemodynamics Simulator</title>
 <style>
 :root{--bg:#0f172a;--panel:rgba(30,41,59,.7);--bd:rgba(255,255,255,.1);--tx:#f8fafc;--sub:#94a3b8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -43,6 +43,10 @@ header{display:flex;justify-content:center;align-items:baseline;gap:12px;flex-wr
 h1{font-size:1.15rem}.sub{font-size:.8rem;margin:0}
 .card{padding:12px 14px;border-radius:14px}.map{padding:10px 18px;gap:14px}.big{font-size:2.5rem}
 .grid{gap:10px}.ct{margin-bottom:6px}.row{margin-bottom:6px}.note{font-size:.72rem;margin-top:6px}
+.gb{position:relative;background:linear-gradient(90deg,#38bdf8,#34d399 36.5%,#fbbf24 65%,#ef4444)}
+.gf{position:absolute;right:0;top:0;height:100%;background:#0f172a;opacity:.82;transition:width .2s}
+.gm{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;border-radius:2px;transform:translateX(-50%);transition:left .2s}
+.gl{position:relative;display:block;height:14px}.gl span{position:absolute}
 </style>
 </head>
 <body>
@@ -55,8 +59,8 @@ h1{font-size:1.15rem}.sub{font-size:.8rem;margin:0}
 <div><div class="lbl">Mean Arterial Pressure</div>
 <div><span class="big" id="mapv">93</span><span class="unit">mmHg</span></div>
 <div id="note" style="font-size:.78rem;font-weight:600;margin-top:4px;color:#94a3b8">Normal</div></div>
-<div class="gw"><div class="gb"><div class="gf" id="gf"></div></div>
-<div class="gl"><span>20 (shock)</span><span>~93</span><span>220 (max)</span></div></div>
+<div class="gw"><div class="gb"><div class="gf" id="gf"></div><div style="position:absolute;left:36.5%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.5)"></div><div class="gm" id="gm"></div></div>
+<div class="gl"><span style="left:0">20 (shock)</span><span style="left:36.5%;transform:translateX(-50%)">93</span><span style="left:60%;transform:translateX(-50%)">140</span><span style="right:0">220 (max)</span></div></div>
 <span class="badge" id="b-mapm">Baseline</span>
 </div>
 
@@ -239,7 +243,7 @@ function frame(ts){
     $('v-hr').textContent=hr+' bpm';$('v-sv').textContent=sv+' mL';$('v-r').textContent=r.toFixed(2)+'×';
     $('svn').textContent=se<sv-.5?`Effective SV ${se.toFixed(0)} mL (less filling time at this HR).`:'Blood pumped out with each beat.';
     $('mapv').textContent=Math.round(m);
-    $('gf').style.width=clamp((m-PMIN)/(PMAX-PMIN)*100,0,100)+'%';
+    const gp=clamp((m-PMIN)/(PMAX-PMIN)*100,0,100);$('gf').style.width=(100-gp)+'%';$('gm').style.left=gp+'%';
     const note=$('note');let s,c,x=false;
     if(m>=140){s='⚠️ Hypertensive crisis range';c='#ef4444';x=true}
     else if(m>=105){s='Elevated pressure';c='#fbbf24'}
