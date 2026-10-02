@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MAP Simulator</title>
+<style>
+:root{--bg:#0f172a;--panel:rgba(30,41,59,.7);--bd:rgba(255,255,255,.1);--tx:#f8fafc;--sub:#94a3b8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--tx);min-height:100vh;display:flex;justify-content:center;padding:10px}
+.c{width:100%;max-width:1100px;display:flex;flex-direction:column;gap:18px}
+h1{font-size:1.7rem;text-align:center}.sub{color:var(--sub);text-align:center;font-size:.9rem;margin-top:4px}
+.cv{background:rgba(15,23,42,.6);border:1px solid var(--bd);border-radius:16px;overflow:hidden;flex:1;min-height:200px;position:relative}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:16px;padding:18px}
+.map{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border:2px solid rgba(244,63,94,.4);background:linear-gradient(135deg,rgba(244,63,94,.15),rgba(30,41,59,.85))}
+.map.x{border-color:#ef4444;box-shadow:0 0 25px rgba(239,68,68,.4)}
+.lbl{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fca5a5}
+.big{font-size:3.4rem;font-weight:900;font-family:monospace;color:#f43f5e;line-height:1}
+.unit{font-size:1.1rem;color:var(--sub);margin-left:8px}
+.gw{flex:1;min-width:200px}.gb{height:12px;background:rgba(15,23,42,.6);border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.gf{height:100%;width:50%;background:linear-gradient(90deg,#38bdf8,#34d399 35%,#fbbf24 65%,#ef4444);transition:width .2s}
+.gl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--sub);font-family:monospace;margin-top:5px}
+.eq{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap}
+.t{display:flex;flex-direction:column;align-items:center;padding:8px 16px;border-radius:8px;background:rgba(15,23,42,.5);border:1px solid var(--bd);transition:font-size .2s}
+.t b{font-family:monospace}.t small{font-size:.72rem;color:var(--sub);margin-top:4px;font-weight:400}
+.op{font-size:1.6rem;color:var(--sub)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.ct{font-weight:700;margin-bottom:12px}.row{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;margin-bottom:8px;gap:8px}
+.badge{font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;background:rgba(148,163,184,.15);color:var(--sub);border:1px solid var(--bd)}
+.badge.up{background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)}
+.badge.down{background:rgba(59,130,246,.2);color:#93c5fd;border-color:rgba(59,130,246,.4)}
+input[type=range]{width:100%;height:6px;border-radius:3px;background:#334155;appearance:none;outline:none}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border-radius:50%;background:#f8fafc;cursor:pointer}
+.note{font-size:.8rem;color:var(--sub);line-height:1.4;margin-top:10px}
+.bl{background:#334155;color:#f8fafc;border:1px solid var(--bd);border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer}.bl:hover{background:#475569}.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.mb{background:rgba(15,23,42,.5);border:1px solid var(--bd);border-radius:12px;padding:12px;text-align:center}
+.mb div:first-child{font-size:.72rem;text-transform:uppercase;color:var(--sub);margin-bottom:8px}
+.c{gap:10px}
+.top{display:flex;flex-direction:column;gap:10px;height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:620px}
+header{display:flex;justify-content:center;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-size:1.15rem}.sub{font-size:.8rem;margin:0}
+.card{padding:12px 14px;border-radius:14px}.map{padding:10px 18px;gap:14px}.big{font-size:2.5rem}
+.grid{gap:10px}.ct{margin-bottom:6px}.row{margin-bottom:6px}.note{font-size:.72rem;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="c">
+<div class="top">
+<header><h1>Systemic Hemodynamics Simulator</h1><p class="sub">Change one slider at a time and watch what happens to MAP: MAP = CO × TVR</p></header>
+<div class="cv"><canvas id="cv"></canvas></div>
+
+<div class="card map" id="mapc">
+<div><div class="lbl">Mean Arterial Pressure</div>
+<div><span class="big" id="mapv">93</span><span class="unit">mmHg</span></div>
+<div id="note" style="font-size:.78rem;font-weight:600;margin-top:4px;color:#94a3b8">Normal</div></div>
+<div class="gw"><div class="gb"><div class="gf" id="gf"></div></div>
+<div class="gl"><span>20 (shock)</span><span>~93</span><span>220 (max)</span></div></div>
+<span class="badge" id="b-mapm">Baseline</span>
+</div>
+
+<div class="grid">
+<div class="card"><div class="ct" style="color:#38bdf8">Heart Rate (HR)</div>
+<div class="row"><span id="v-hr">70 bpm</span><span class="badge" id="b-hr">Baseline</span><button class="bl" onclick="rs('hr',70)">↺ Baseline</button></div>
+<input type="range" id="hr" min="40" max="180" value="70">
+<div class="note">Beats per minute. A faster heart pumps more blood per minute. Above about 100 bpm the heart has less time to fill between beats, so each beat pushes out a bit less.</div></div>
+<div class="card"><div class="ct" style="color:#38bdf8">Stroke Volume (SV)</div>
+<div class="row"><span id="v-sv">70 mL</span><span class="badge" id="b-sv">Baseline</span><button class="bl" onclick="rs('sv',70)">↺ Baseline</button></div>
+<input type="range" id="sv" min="40" max="120" value="70">
+<div class="note" id="svn">Blood pumped out with each beat.</div></div>
+<div class="card"><div class="ct" style="color:#fbbf24">Arteriolar Radius (r)</div>
+<div class="row"><span id="v-r">1.00×</span><span class="badge" id="b-r">Baseline</span><button class="bl" onclick="rs('r',1)">↺ Baseline</button></div>
+<input type="range" id="r" min="0.7" max="1.3" step="0.01" value="1">
+<div class="note">Narrower vessels (r &lt; 1) resist flow more, so TVR goes up. Wider vessels (r &gt; 1) lower TVR. Resistance is very sensitive to radius (it scales with 1/r⁴), but the body limits how far it can go.</div></div>
+</div>
+</div>
+<div class="card eq">
+<div class="t" id="t-map" style="color:#f43f5e"><b>MAP</b><small id="s-map">Mean Arterial Pressure</small></div><span class="op">=</span>
+<div class="t" id="t-co" style="color:#38bdf8"><b>CO</b><small id="s-co">HR × SV</small></div><span class="op">×</span>
+<div class="t" id="t-tvr" style="color:#fbbf24"><b>TVR</b><small id="s-tvr">Total Vascular Resistance</small></div></div>
+
+<div class="card"><div class="ct" style="color:#f43f5e">Qualitative Response</div>
+<div class="mg">
+<div class="mb"><div>Cardiac Output</div><span class="badge" id="b-co">Baseline</span></div>
+<div class="mb"><div>Vascular Resistance</div><span class="badge" id="b-tvr">Baseline</span></div>
+<div class="mb"><div>Mean Arterial Pressure</div><span class="badge" id="b-map">Baseline</span></div>
+<div class="mb"><div>Arterial Wall Stretch</div><span class="badge" id="b-pp">Baseline</span></div>
+</div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), cv=$('cv'), ctx=cv.getContext('2d');
+const P0=93, R0=1.138, C0=1.8, PMIN=20, PMAX=220;   // R0: mmHg·s/mL (=19 mmHg·min/L)
+const HR0=70, SV0=70, CO0=HR0*SV0/1000;
+let W=0,H=0;
+function resize(){const b=cv.getBoundingClientRect(),d=devicePixelRatio||1;cv.width=b.width*d;cv.height=b.height*d;ctx.setTransform(d,0,0,d,0,0);W=b.width;H=b.height}
+addEventListener('resize',resize);resize();new ResizeObserver(resize).observe(cv.parentElement);
+
+// ---------- physiology ----------
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b), lerp=(a,b,t)=>a+(b-a)*t, ss=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+// Poiseuille 1/r^4, softly saturated to a realistic whole-body range
+function tvrRatio(r){const l=-4*Math.log(r);return Math.exp(l>0?1.1*Math.tanh(l/1.1):1.05*Math.tanh(l/1.05))}
+function effSV(hr,sv){return sv*(hr>100?Math.max(.65,1-.0035*(hr-100)):1)}
+
+let P=P0, phase=0, ej=0, clock=0;
+let bI=0,bT=0,bMax=0,bMin=999;
+let pub={map:P0,sbp:120,dbp:81};
+let Qin=0,Qout=0;
+
+function stepPhys(dt,hr,sv,r){
+  const cycle=60/hr, tSys=.3*Math.sqrt(cycle), se=effSV(hr,sv), R=R0*tvrRatio(r);
+  phase+=dt;
+  if(phase>=cycle){phase-=cycle;if(bT>0)pub={map:bI/bT,sbp:bMax,dbp:bMin};bI=bT=0;bMax=0;bMin=999}
+  Qin=phase<tSys?Math.PI/2*se/tSys*Math.sin(Math.PI*phase/tSys):0;
+  Qout=Math.max(0,P/R);
+  const C=C0*Math.pow(P0/Math.max(P,30),.5);      // arteries stiffen as pressure rises
+  P=clamp(P+(Qin-Qout)/C*dt,PMIN,PMAX);
+  bI+=P*dt;bT+=dt;bMax=Math.max(bMax,P);bMin=Math.min(bMin,P);
+  if(Qin>0)ej=Math.min(1,ej+Qin*dt/se);else ej=Math.max(0,ej-dt/Math.max(.15,cycle-tSys));
+}
+
+// ---------- geometry ----------
+let G={};
+function geom(r){
+  const cy=H/2;
+  const rA=clamp(H*.11*(1+.45*(P-P0)/P0),H*.06,H*.19);       // aorta distends with instantaneous pressure
+  const rAr=clamp(H*.07*r,H*.02,H*.11);
+  const ve=1-.28*ej*Math.min(1.3,sv_/100);
+  G={cy,rA,rAr,ve,cx:W*.14,rx:W*.12,ventR:H*.17,xs:W*.22,vx:W*.28,ax:W*.65,ex:W*.95};
+}
+function ventHalf(x){const t=(x-G.cx)/G.rx;return t>=1||t<=-1?0:G.ventR*G.ve*Math.sqrt(1-t*t)}
+function halfH(x){
+  if(x<G.xs)return ventHalf(x);
+  if(x<G.vx)return lerp(ventHalf(G.xs),G.rA,ss((x-G.xs)/(G.vx-G.xs)));
+  if(x<G.ax){const s=(x-G.vx)/(G.ax-G.vx);return lerp(G.rA,G.rAr,ss((s-.55)/.45))}
+  return G.rAr;
+}
+
+// ---------- particles ----------
+const parts=[];
+for(let i=0;i<150;i++)parts.push({x:Math.random()*.9*2000+80,yn:Math.random()*2-1});
+function flowAt(x){
+  if(x<G.vx)return Qin;
+  if(x<G.ax){const s=(x-G.vx)/(G.ax-G.vx);return Qout+(Qin-Qout)*Math.pow(1-s,2)}
+  return Qout;
+}
+function moveParts(dt){
+  const hBase=H*.1;
+  for(const p of parts){
+    if(p.x>W)p.x=W*(.04+Math.random()*.2);
+    p.yn=clamp(p.yn+(Math.random()-.5)*.08,-1,1);
+    let v;
+    if(p.x<G.xs){v=Qin>0?Qin*.9:30*(1+Qout/80)}            // ejection / diastolic filling drift
+    else{
+      const area=Math.pow(Math.max(halfH(p.x),4)/hBase,2);
+      v=flowAt(p.x)*1.0/area*(1.4*(1-.7*p.yn*p.yn)+.1);       // continuity + parabolic profile
+    }
+    p.x+=Math.min(v,700)*dt;
+    if(Qin<=0&&p.x>G.vx-6&&p.x<G.vx+2)p.x=G.vx-6-Math.random()*4;   // closed valve
+    if(p.x>G.ex){p.x=W*(.04+Math.random()*.16);p.yn=Math.random()*2-1}
+  }
+}
+
+// ---------- drawing ----------
+function tube(off,x0,x1){
+  ctx.beginPath();
+  for(let x=x0;x<=x1;x+=6)ctx[x===x0?'moveTo':'lineTo'](x,G.cy-halfH(x)-off);
+  for(let x=x1;x>=x0;x-=6)ctx.lineTo(x,G.cy+halfH(x)+off);
+  ctx.closePath();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cy=G.cy, hue=clamp(220*(1-(P-PMIN)/(PMAX-PMIN)),0,220);
+  ctx.textAlign='center';ctx.font='bold 13px system-ui';
+  // tissue background
+  let g=ctx.createRadialGradient(W*.5,cy,H*.1,W*.5,cy,W*.7);g.addColorStop(0,'#2a1220');g.addColorStop(1,'#0b1020');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // capillary beds beyond the arterioles
+  ctx.lineWidth=2;ctx.strokeStyle='rgba(185,28,28,.35)';
+  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(G.ex,cy);ctx.bezierCurveTo(G.ex+W*.015,cy+i*H*.03,G.ex+W*.03,cy+i*H*.06,G.ex+W*.045,cy+i*H*.09);ctx.stroke()}
+  // ventricle: muscular wall thickens as it squeezes
+  const vr=G.ventR*G.ve, th=12+9*ej;
+  g=ctx.createRadialGradient(G.cx-G.rx*.2,cy-vr*.3,vr*.1,G.cx,cy,G.rx+th);g.addColorStop(0,'#c23c50');g.addColorStop(1,'#5b0f23');
+  ctx.beginPath();ctx.ellipse(G.cx,cy,G.rx+th,vr+th,0,0,7);ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='rgba(255,180,190,.13)';ctx.lineWidth=1.5;
+  for(let i=1;i<=3;i++){ctx.beginPath();ctx.ellipse(G.cx,cy,G.rx+th*i/4,vr+th*i/4,0,0,7);ctx.stroke()}
+  g=ctx.createRadialGradient(G.cx,cy,vr*.1,G.cx,cy,G.rx);g.addColorStop(0,'#8a1c1c');g.addColorStop(1,'#2b0a10');
+  ctx.beginPath();ctx.ellipse(G.cx,cy,G.rx,vr,0,0,7);ctx.fillStyle=g;ctx.fill();
+  ctx.fillStyle='#fecdd3';ctx.fillText('Left Ventricle',G.cx,cy+G.ventR+th+16);
+  // vessel wall (soft rim light + elastic layers) and blood-filled lumen
+  tube(8,G.xs,G.ex);ctx.fillStyle='#6e1414';ctx.fill();
+  ctx.save();ctx.clip();ctx.strokeStyle='rgba(255,150,120,.28)';ctx.lineWidth=6;ctx.stroke();ctx.restore();
+  ctx.strokeStyle='rgba(255,210,160,.2)';ctx.lineWidth=1;
+  for(const o of[3,5.5]){tube(o,G.xs,G.ax);ctx.stroke()}
+  tube(0,G.xs,G.ex);ctx.fillStyle='#3a0c14';ctx.fill();
+  ctx.save();ctx.clip();
+  for(const[w,a]of[[22,.07],[12,.09],[5,.12]]){ctx.strokeStyle=`rgba(230,70,70,${a})`;ctx.lineWidth=w;ctx.stroke()}
+  ctx.restore();
+  tube(0,G.xs,G.ex);ctx.strokeStyle=`hsla(${hue},85%,60%,.85)`;ctx.lineWidth=2;ctx.stroke();
+  // smooth-muscle bands: thicker and brighter when constricted
+  const con=clamp((1-G.rAr/(H*.07))*2.5,-.5,1);
+  ctx.lineCap='round';ctx.strokeStyle=`rgba(217,119,6,${.7+.3*Math.max(con,0)})`;ctx.lineWidth=5+6*Math.max(con,0);
+  for(let i=1;i<=4;i++){const x=G.ax+(G.ex-G.ax)*i/5;
+    for(const sg of[-1,1]){ctx.beginPath();ctx.moveTo(x,cy+sg*(G.rAr+9));ctx.lineTo(x,cy+sg*(G.rAr+1));ctx.stroke()}}
+  ctx.lineCap='butt';
+  ctx.fillStyle='#f8fafc';ctx.fillText('Elastic Arteries',(G.vx+G.ax)/2,cy+G.rA*1.0+34);
+  ctx.fillStyle='#fbbf24';ctx.fillText('Arterioles (Resistance)',(G.ax+G.ex)/2,cy+H*.2);
+  // wall tension arrows scale with pressure
+  const al=clamp((P-PMIN)/200*40,0,26),mx=(G.vx+G.ax)/2-W*.04;
+  ctx.strokeStyle=`hsla(${hue},100%,75%,.7)`;ctx.lineWidth=2;
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2,r0=halfH(mx)*.45;
+    ctx.beginPath();ctx.moveTo(mx+Math.cos(a)*r0,cy+Math.sin(a)*r0);ctx.lineTo(mx+Math.cos(a)*(r0+al),cy+Math.sin(a)*(r0+al));ctx.stroke()}
+  // aortic valve leaflets
+  const gp=Qin>0?Math.max(G.rA*.8,8):2;
+  ctx.strokeStyle='#e5e7eb';ctx.lineWidth=5;ctx.lineCap='round';
+  for(const sg of[-1,1]){ctx.beginPath();ctx.moveTo(G.vx-6,cy+sg*(G.rA+2));
+    ctx.quadraticCurveTo(G.vx+(Qin>0?4:8),cy+sg*(Qin>0?G.rA:G.rA*.4),G.vx+(Qin>0?20:12),cy+sg*gp);ctx.stroke()}
+  ctx.lineCap='butt';
+  // red blood cells: biconcave discs that tilt with shear and tumble slowly
+  for(const p of parts){const x=p.x,y=cy+p.yn*halfH(x)*.85;
+    ctx.save();ctx.translate(x,y);ctx.rotate(p.yn*.6+Math.sin(clock*2+p.yn*20)*.35);
+    ctx.fillStyle='#dc2626';ctx.beginPath();ctx.ellipse(0,0,4.4,2.7,0,0,7);ctx.fill();
+    ctx.fillStyle='#7f1d1d';ctx.beginPath();ctx.ellipse(0,0,1.8,1,0,0,7);ctx.fill();ctx.restore()}
+}
+
+// ---------- UI ----------
+function badge(el,v,base,inv){const d=v-base;let c='badge',t='Baseline';
+  if(Math.abs(d)>base*.03){const up=(d>0)!==!!inv;c+=up?' up':' down';t=d>0?'↑ Increase':'↓ Decrease'}
+  el.className=c;el.textContent=t}
+let sv_=SV0, last=performance.now(), uiT=0;
+function rs(id,v){$(id).value=v}
+function frame(ts){
+  const dt=Math.min((ts-last)/1000,.05);last=ts;clock+=dt;
+  const hr=+$('hr').value, sv=+$('sv').value, r=+$('r').value; sv_=sv;
+  const n=Math.ceil(dt/.004);for(let i=0;i<n;i++)stepPhys(dt/n,hr,sv,r);
+  geom(r);moveParts(dt);draw();
+  if((uiT+=dt)>.1){uiT=0;
+    const se=effSV(hr,sv), co=hr*se/1000, tvr=tvrRatio(r), m=pub.map;
+    $('v-hr').textContent=hr+' bpm';$('v-sv').textContent=sv+' mL';$('v-r').textContent=r.toFixed(2)+'×';
+    $('svn').textContent=se<sv-.5?`Effective SV ${se.toFixed(0)} mL (less filling time at this HR).`:'Blood pumped out with each beat.';
+    $('mapv').textContent=Math.round(m);
+    $('gf').style.width=clamp((m-PMIN)/(PMAX-PMIN)*100,0,100)+'%';
+    const note=$('note');let s,c,x=false;
+    if(m>=140){s='⚠️ Hypertensive crisis range';c='#ef4444';x=true}
+    else if(m>=105){s='Elevated pressure';c='#fbbf24'}
+    else if(m<45){s='⚠️ Severe shock / near-arrest';c='#38bdf8';x=true}
+    else if(m<65){s='⚠️ Hypotension: organ hypoperfusion risk (MAP < 65)';c='#38bdf8';x=true}
+    else{s='Normal hemodynamics';c='#94a3b8'}
+    note.textContent=s;note.style.color=c;$('mapc').classList.toggle('x',x);
+    $('s-co').textContent=co.toFixed(1)+' L/min';$('s-tvr').textContent=(19*tvr).toFixed(1)+' mmHg·min/L';$('s-map').textContent='Mean Arterial Pressure';
+    badge($('b-hr'),hr,HR0);badge($('b-sv'),sv,SV0);badge($('b-r'),r,1);
+    badge($('b-co'),co,CO0);badge($('b-tvr'),tvr,1);badge($('b-map'),m,P0);badge($('b-mapm'),m,P0);badge($('b-pp'),m,P0);
+    const f=(v,e)=>clamp(1.25*Math.pow(Math.max(v,.2),.35),.85,1.9)+'rem';
+    $('t-co').style.fontSize=f(co/CO0);$('t-tvr').style.fontSize=f(tvr);$('t-map').style.fontSize=f(m/P0);
+  }
+  requestAnimationFrame(frame);
+}
+geom(1);requestAnimationFrame(frame);
+</script>
+</body>
+</html>
